@@ -1,20 +1,92 @@
 package bean;
-
-public class Aluno {
+import java.io.*;
+public class Aluno implements Serializable{
 	
+	private String nome;
+
 	private String matricula;
 	private int qtLivros;
 	private int codigo;
 	private int setor;//Setor A =1 Setor B = 2;
-	private int operacao; //1 - cadastrar; 2 - Consultar; 
-	private int respConfirmacao;// 0 - Não; 1 - Sim;
+	private int operacao; //0- finalizada; -1 -nao iniciada 1 - cadastrar; 2 - Consultar; 
+	private boolean respConfirmacao;// 0 - Não; 1 - Sim;
+	private boolean inseriu;
+	private int enviarSetor;//Setor A =1 Setor B = 2;
+	private boolean encontrou;
+	private boolean consultaSetor;
+	private boolean edit;
 	
-	public int getRespConfirmacao() {
+	
+
+
+
+	public Aluno(){
+		qtLivros = 3;
+		setor = 1;
+		respConfirmacao = false;
+		inseriu = false;
+		enviarSetor = 1 ;
+		encontrou = false;
+		operacao = -1;
+		consultaSetor = false;
+		edit = false;
+	}
+	
+	public boolean isEdit() {
+		return edit;
+	}
+
+	public void setEdit(boolean edit) {
+		this.edit = edit;
+	}
+	
+	public boolean isConsultaSetor() {
+		return consultaSetor;
+	}
+
+	public void setConsultaSetor(boolean consultaSetor) {
+		this.consultaSetor = consultaSetor;
+	}
+	
+	public String getNome() {
+		return nome;
+	}
+
+
+	public void setNome(String nome) {
+		this.nome = nome;
+	}
+	public boolean isRespConfirmacao() {
 		return respConfirmacao;
 	}
-	public void setRespConfirmacao(int respConfirmacao) {
+	public void setRespConfirmacao(boolean respConfirmacao) {
 		this.respConfirmacao = respConfirmacao;
 	}
+
+
+	
+	public boolean isEncontrou() {
+		return encontrou;
+	}
+	public void setEncontrou(boolean encontrou) {
+		this.encontrou = encontrou;
+	}
+	public int getEnviarSetor() {
+		return enviarSetor;
+	}
+	public void setEnviarSetor(int enviarSetor) {
+		this.enviarSetor = enviarSetor;
+	}
+	
+
+	
+	public boolean isInseriu() {
+		return inseriu;
+	}
+	public void setInseriu(boolean inseriu) {
+		this.inseriu = inseriu;
+	}
+	
 	public int getOperacao() {
 		return operacao;
 	}
