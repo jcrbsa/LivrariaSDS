@@ -16,10 +16,19 @@ public class Aluno implements Serializable{
 	private boolean consultaSetor;
 	private boolean edit;
 	private int id;
+	private int estado; //0 - nao definido;1 - get; 2 - set; 
 	
 	
 
 
+
+	public int getEstado() {
+		return estado;
+	}
+
+	public void setEstado(int estado) {
+		this.estado = estado;
+	}
 
 	public Aluno(){
 		qtLivros = 3;
@@ -31,6 +40,7 @@ public class Aluno implements Serializable{
 		operacao = -1;
 		consultaSetor = false;
 		edit = false;
+		estado= 0;
 	}
 	
 	public int getId() {

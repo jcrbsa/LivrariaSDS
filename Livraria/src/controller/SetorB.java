@@ -21,12 +21,18 @@ public class SetorB implements Runnable{
 	private String host;
 	private static List<Aluno> alunos = new ArrayList<Aluno>();
 	private static int id = 0;
+	private static Aluno teste ;
 
-	public static void main(String[] args) throws IOException {
 
-		new SetorB("127.0.0.2", 12345).executa();
+	
+	public static Aluno getEstadoAplicacao(){
+		return teste;
 	}
 	
+	public static void setEstadoAplicacao(Aluno in){
+		teste = in;
+	}
+
 	private ObjectInputStream in;
 	private ObjectOutputStream out;
 
@@ -40,55 +46,69 @@ public class SetorB implements Runnable{
 	public void run() {
 		
 		try {
-
-
-			Aluno aluno = (Aluno) in.readObject();
-
 			
+			  Aluno teste = (Aluno) in.readObject();
+
+				if(teste.getEstado() == 2){
+				
 				Aluno aluno_consulta = new Aluno();
-				aluno_consulta = ExisteAlunoNoSetorB(aluno.getMatricula());
+				aluno_consulta = ExisteAlunoNoSetorB(teste.getMatricula());
 
 				out.writeObject(aluno_consulta);
 				Aluno aluno_edicao = (Aluno) in.readObject();
 				if (aluno_edicao.isEdit() == true) {
 					alunos.remove(aluno_consulta.getId());
-					alunos.add(aluno_consulta.getId(), aluno);
-					aluno.setRespConfirmacao(true);
+					alunos.add(aluno_consulta.getId(), teste);
+					teste.setRespConfirmacao(true);
 					out.writeObject(aluno_edicao);
 				}
-				
-					} catch (Exception e) {
+			}else if(teste.getEstado() == 1){
+				setEstadoAplicacao(teste);
+			}
+	
+
+		} catch (Exception e) {
 		}
-		
-		
+
+
 	}
+
+	public static void main(String[] args) throws IOException {
+
+		new SetorB("10.0.0.2", 12345).executa();
+	}
+
 	public SetorB(String host, int porta) {
 		this.host = host;
 		this.porta = porta;
 	}
 
 	public void executa() throws IOException {
-		try {
+	
 			Socket setor = new Socket(this.host, this.porta);
 
+			System.out.println("Nova conexão com a matriz "
+					+ setor.getInetAddress().getHostAddress());
+			
 			ObjectOutputStream out = new ObjectOutputStream(
 					new DataOutputStream(setor.getOutputStream()));
 			
 			ObjectInputStream in = new ObjectInputStream(new DataInputStream(
 					setor.getInputStream()));
 
-			SetorB tc = new SetorB(in, out);
-			new Thread(tc).start();
-
+			
+		SetorB tc = new SetorB(in, out);
+		new Thread(tc).start();
+			
+			
 			String sair;
 			String nome;
 			String matricula = null;
 			Aluno aluno = new Aluno();
+	
 			int op;
-			System.out
-					.println("Bem-Vindo Livraria Sistemas Distribuídos - \"Objetos Distribuídos\"");
-			sair = getString("\"cont\" p/ continuar :(\"fim\" p/ encerrar)");
-
+			System.out.println("Bem Vindo Livraria");
+			sair = getString("\"cont\" p/ continuar (\"fim\" para encerrar)");
 			while (!sair.equals("fim")) {
 				op = getInt("1=Cadastrar,2=Consulta,3=Listar Todos Usuários,",
 						1, 3);
@@ -107,13 +127,14 @@ public class SetorB implements Runnable{
 					aluno_cadastro.setSetor(2);
 					aluno_cadastro.setMatricula(matricula);
 					out.writeObject(aluno_cadastro);
-					aluno_cadastro = (Aluno) in.readObject();
+					aluno_cadastro = getEstadoAplicacao();
+//					aluno_cadastro = (Aluno) in.readObject();
+		
 					if (aluno_cadastro.isEncontrou() != true) {
 						aluno_cadastro.setId(id);
 						alunos.add(id, aluno_cadastro);
 						id++;
-						System.out
-								.println("Aluno Registrado no SetorB Com Sucesso!!!");
+						System.out.println("Aluno Registrado no SetorB Com Sucesso!!!");
 
 						if (aluno_cadastro.isInseriu() == true) {
 							System.out
@@ -123,7 +144,7 @@ public class SetorB implements Runnable{
 					} else {
 						System.out.println("Aluno já cadastrado no Sistema!!!");
 					}
-
+					
 					break;
 
 				case 2:
@@ -138,8 +159,11 @@ public class SetorB implements Runnable{
 								.println("Nenhum Registro Encontrado no Setor A");
 						aluno_consulta.setMatricula(matricula);
 						aluno_consulta.setOperacao(2);
+						aluno_consulta.setSetor(2);
 						out.writeObject(aluno_consulta);
-						aluno_consulta = (Aluno) in.readObject();
+						aluno_consulta = getEstadoAplicacao();
+//						aluno_consulta = (Aluno) in.readObject();
+
 						if (aluno_consulta.isEncontrou() != true) {
 							System.out
 									.println("Nenhum Registro Encontrado no Sistema");
@@ -161,8 +185,8 @@ public class SetorB implements Runnable{
 								out.writeObject(aluno_alteracao);
 							}
 						}
-
-					}
+						}
+					
 
 					break;
 				case 3:
@@ -179,13 +203,10 @@ public class SetorB implements Runnable{
 
 				sair = getString("Continuar' p/ prosseguir ou(\"fim\" para encerrar)");
 			}
-			aluno.setOperacao(0);
-			out.writeObject(aluno);
-
+		
+	
 			System.out.println("Programa encerrado");
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+			setor.close();
 
 	}
 
@@ -196,7 +217,6 @@ public class SetorB implements Runnable{
 				return aluno;
 			}
 		}
-
 		return null;
 	}
 
@@ -240,15 +260,12 @@ public class SetorB implements Runnable{
 			}
 
 			if (st.ttype == StreamTokenizer.TT_NUMBER) {
-
 				Double test = st.nval;
 				Integer test2 = test.intValue();
 				in = in.concat(test2.toString());
 			}
 			if (st.ttype == quoteChar || st.ttype == StreamTokenizer.TT_WORD) {
-
-				// if (in.length() > 0)
-				// in = in.concat(" ");
+				/* if (in.length() > 0)in = in.concat(" "); */
 				in = in.concat(st.sval);
 			}
 		} while (in.length() == 0 || st.ttype != StreamTokenizer.TT_EOL);
@@ -256,6 +273,6 @@ public class SetorB implements Runnable{
 		return (in);
 	}
 
-
+	
 }
 

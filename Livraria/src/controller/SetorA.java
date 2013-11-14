@@ -21,10 +21,18 @@ public class SetorA implements Runnable{
 	private String host;
 	private static List<Aluno> alunos = new ArrayList<Aluno>();
 	private static int id = 0;
-	
+	private static Aluno teste ;
 
 
 	
+	public static Aluno getEstadoAplicacao(){
+		return teste;
+	}
+	
+	public static void setEstadoAplicacao(Aluno in){
+		teste = in;
+	}
+
 	private ObjectInputStream in;
 	private ObjectOutputStream out;
 
@@ -38,23 +46,27 @@ public class SetorA implements Runnable{
 	public void run() {
 		
 		try {
+			
+			  Aluno teste = (Aluno) in.readObject();
 
-	
-			Aluno aluno = (Aluno) in.readObject();
-
-		
+				if(teste.getEstado() == 2){
+				
 				Aluno aluno_consulta = new Aluno();
-				aluno_consulta = ExisteAlunoNoSetorA(aluno.getMatricula());
+				aluno_consulta = ExisteAlunoNoSetorA(teste.getMatricula());
 
 				out.writeObject(aluno_consulta);
 				Aluno aluno_edicao = (Aluno) in.readObject();
 				if (aluno_edicao.isEdit() == true) {
 					alunos.remove(aluno_consulta.getId());
-					alunos.add(aluno_consulta.getId(), aluno);
-					aluno.setRespConfirmacao(true);
+					alunos.add(aluno_consulta.getId(), teste);
+					teste.setRespConfirmacao(true);
 					out.writeObject(aluno_edicao);
 				}
+			}else if(teste.getEstado() == 1){
+				setEstadoAplicacao(teste);
+			}
 			
+	
 
 		} catch (Exception e) {
 		}
@@ -73,7 +85,7 @@ public class SetorA implements Runnable{
 	}
 
 	public void executa() throws IOException {
-		try {
+	
 			Socket setor = new Socket(this.host, this.porta);
 
 			System.out.println("Nova conexão com a matriz "
@@ -85,16 +97,16 @@ public class SetorA implements Runnable{
 			ObjectInputStream in = new ObjectInputStream(new DataInputStream(
 					setor.getInputStream()));
 
-
-
 			
-			SetorA tc = new SetorA(in, out);
-			new Thread(tc).start();
-
+		SetorA tc = new SetorA(in, out);
+		new Thread(tc).start();
+			
+			
 			String sair;
 			String nome;
 			String matricula = null;
 			Aluno aluno = new Aluno();
+	
 			int op;
 			System.out.println("Bem Vindo Livraria");
 			sair = getString("\"cont\" p/ continuar (\"fim\" para encerrar)");
@@ -115,7 +127,8 @@ public class SetorA implements Runnable{
 					aluno_cadastro.setOperacao(1);
 					aluno_cadastro.setMatricula(matricula);
 					out.writeObject(aluno_cadastro);
-					aluno_cadastro = (Aluno) in.readObject();
+					aluno_cadastro = getEstadoAplicacao();
+//					aluno_cadastro = (Aluno) in.readObject();
 					if (aluno_cadastro.isEncontrou() != true) {
 						aluno_cadastro.setId(id);
 						alunos.add(id, aluno_cadastro);
@@ -130,7 +143,7 @@ public class SetorA implements Runnable{
 					} else {
 						System.out.println("Aluno já cadastrado no Sistema!!!");
 					}
-
+					
 					break;
 
 				case 2:
@@ -146,7 +159,9 @@ public class SetorA implements Runnable{
 						aluno_consulta.setMatricula(matricula);
 						aluno_consulta.setOperacao(2);
 						out.writeObject(aluno_consulta);
-						aluno_consulta = (Aluno) in.readObject();
+						aluno_consulta = getEstadoAplicacao();
+//						aluno_consulta = (Aluno) in.readObject();
+
 						if (aluno_consulta.isEncontrou() != true) {
 							System.out
 									.println("Nenhum Registro Encontrado no Sistema");
@@ -168,8 +183,8 @@ public class SetorA implements Runnable{
 								out.writeObject(aluno_alteracao);
 							}
 						}
-
-					}
+						}
+					
 
 					break;
 				case 3:
@@ -186,13 +201,10 @@ public class SetorA implements Runnable{
 
 				sair = getString("Continuar' p/ prosseguir ou(\"fim\" para encerrar)");
 			}
-			aluno.setOperacao(0);
-			out.writeObject(aluno);
-
+		
+	
 			System.out.println("Programa encerrado");
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+			setor.close();
 
 	}
 
