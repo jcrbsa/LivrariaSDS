@@ -8,13 +8,14 @@ public class Aluno implements Serializable{
 	private int qtLivros;
 	private int codigo;
 	private int setor;//Setor A =1 Setor B = 2;
-	private int operacao; //0- finalizada; -1 -nao iniciada 1 - cadastrar; 2 - Consultar; 
+	private int operacao; //0- finalizada; -1 -nao iniciada 1 - cadastrar; 2 - Consultar; 3 - Iniciar 
 	private boolean respConfirmacao;// 0 - Não; 1 - Sim;
 	private boolean inseriu;
 	private int enviarSetor;//Setor A =1 Setor B = 2;
 	private boolean encontrou;
 	private boolean consultaSetor;
 	private boolean edit;
+	private int id;
 	
 	
 
@@ -32,6 +33,14 @@ public class Aluno implements Serializable{
 		edit = false;
 	}
 	
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
 	public boolean isEdit() {
 		return edit;
 	}
