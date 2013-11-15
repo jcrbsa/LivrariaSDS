@@ -21,18 +21,8 @@ public class SetorB implements Runnable{
 	private String host;
 	private static List<Aluno> alunos = new ArrayList<Aluno>();
 	private static int id = 0;
-	private static Aluno teste ;
 
-
-	
-	public static Aluno getEstadoAplicacao(){
-		return teste;
-	}
-	
-	public static void setEstadoAplicacao(Aluno in){
-		teste = in;
-	}
-
+	public static Socket setor_classe;
 	private ObjectInputStream in;
 	private ObjectOutputStream out;
 
@@ -46,7 +36,7 @@ public class SetorB implements Runnable{
 	public void run() {
 		
 		try {
-			
+			while(true){
 			  Aluno teste = (Aluno) in.readObject();
 
 				if(teste.getEstado() == 2){
@@ -63,9 +53,43 @@ public class SetorB implements Runnable{
 					out.writeObject(aluno_edicao);
 				}
 			}else if(teste.getEstado() == 1){
-				setEstadoAplicacao(teste);
+				if(teste.getOperacao() == 1){
+					if (teste.isEncontrou()  != true) {
+						teste.setId(id);
+						alunos.add(id, teste);
+						id++;
+						System.out.println("Aluno Registrado no SetorA Com Sucesso!!!");
+						System.out.println("Aluno Registrado na Central Com Sucesso!!!");
+					} else if(teste.isEncontrou()  != false) {
+						System.out.println("Aluno já cadastrado no Sistema!!!");
+					}
+				}else if(teste.getOperacao() == 2){
+					int op;
+					String nome;
+					String matricula;
+					if (teste.isEncontrou() != true) {
+						System.out
+								.println("Nenhum Registro Encontrado no Sistema");
+					} else {
+						System.out.println("|Nome:" + teste.getNome()
+								+ "||" + teste.getMatricula() + "||"
+								+ teste.getSetor());
+						op = getInt("Alterar Informações registro 1=Sim,0-Não",
+								1, 2);
+						if (op == 1) {
+							Aluno aluno_alteracao = new Aluno();
+							nome = getString("Digite Nome:");
+							matricula = getString("Digite Matricula:");
+							aluno_alteracao.setNome(nome);
+							aluno_alteracao.setMatricula(matricula);
+							aluno_alteracao.setEdit(true);
+							out.writeObject(aluno_alteracao);
+						}
+					}
+					
+				}
 			}
-	
+			}
 
 		} catch (Exception e) {
 		}
@@ -95,12 +119,11 @@ public class SetorB implements Runnable{
 			
 			ObjectInputStream in = new ObjectInputStream(new DataInputStream(
 					setor.getInputStream()));
-
+			setor_classe =  setor;
 			
 		SetorB tc = new SetorB(in, out);
 		new Thread(tc).start();
-			
-			
+
 			String sair;
 			String nome;
 			String matricula = null;
@@ -127,23 +150,6 @@ public class SetorB implements Runnable{
 					aluno_cadastro.setSetor(2);
 					aluno_cadastro.setMatricula(matricula);
 					out.writeObject(aluno_cadastro);
-					aluno_cadastro = getEstadoAplicacao();
-//					aluno_cadastro = (Aluno) in.readObject();
-		
-					if (aluno_cadastro.isEncontrou() != true) {
-						aluno_cadastro.setId(id);
-						alunos.add(id, aluno_cadastro);
-						id++;
-						System.out.println("Aluno Registrado no SetorB Com Sucesso!!!");
-
-						if (aluno_cadastro.isInseriu() == true) {
-							System.out
-									.println("Aluno Registrado na Central Com Sucesso!!!");
-						}
-
-					} else {
-						System.out.println("Aluno já cadastrado no Sistema!!!");
-					}
 					
 					break;
 
@@ -155,37 +161,12 @@ public class SetorB implements Runnable{
 						System.out.println("|Nome:" + aluno_consulta.getNome()
 								+ "||" + aluno_consulta.getMatricula() + "|");
 					} else {
-						System.out
-								.println("Nenhum Registro Encontrado no Setor A");
+						System.out.println("Nenhum Registro Encontrado no SetorB");
 						aluno_consulta.setMatricula(matricula);
 						aluno_consulta.setOperacao(2);
 						aluno_consulta.setSetor(2);
 						out.writeObject(aluno_consulta);
-						aluno_consulta = getEstadoAplicacao();
-//						aluno_consulta = (Aluno) in.readObject();
-
-						if (aluno_consulta.isEncontrou() != true) {
-							System.out
-									.println("Nenhum Registro Encontrado no Sistema");
-						} else {
-							System.out.println("|Nome:"
-									+ aluno_consulta.getNome() + "||"
-									+ aluno_consulta.getMatricula() + "||"
-									+ aluno_consulta.getSetor());
-							op = getInt(
-									"Alterar Informações registro 1=Sim,0-Não",
-									1, 2);
-							if (op == 1) {
-								Aluno aluno_alteracao = new Aluno();
-								nome = getString("Digite Nome:");
-								matricula = getString("Digite Matricula:");
-								aluno_alteracao.setNome(nome);
-								aluno_alteracao.setMatricula(matricula);
-								aluno_alteracao.setEdit(true);
-								out.writeObject(aluno_alteracao);
-							}
-						}
-						}
+					}
 					
 
 					break;
@@ -206,6 +187,7 @@ public class SetorB implements Runnable{
 		
 	
 			System.out.println("Programa encerrado");
+			
 			setor.close();
 
 	}

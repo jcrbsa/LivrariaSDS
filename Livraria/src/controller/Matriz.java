@@ -24,7 +24,7 @@ public class Matriz  implements Runnable {
 	private static List<Socket> setores = new ArrayList<Socket>();
 	private static List<ObjectInputStream> objectinputstream = new ArrayList<ObjectInputStream>();
 	private static List<ObjectOutputStream> objectoutputstream = new ArrayList<ObjectOutputStream>();
-	private static  List<Aluno> alunos = new ArrayList<Aluno>();
+	private static final List<Aluno> alunos = new ArrayList<Aluno>();
 	private static int id = 0;
 	
 	private Socket setor;
@@ -33,23 +33,48 @@ public class Matriz  implements Runnable {
 	private ObjectInputStream in_outroSetor;
 	private ObjectOutputStream out_outroSetor;
 
+	public Socket getSetor() {
+		return setor;
+	}
+
+
+	public void setSetor(Socket setor) {
+		this.setor = setor;
+	}
+
+
+	public ObjectInputStream getIn_outroSetor() {
+		return in_outroSetor;
+	}
+
+
+	public void setIn_outroSetor(ObjectInputStream in_outroSetor) {
+		this.in_outroSetor = in_outroSetor;
+	}
+
+
+	public ObjectOutputStream getOut_outroSetor() {
+		return out_outroSetor;
+	}
+
+
+	public void setOut_outroSetor(ObjectOutputStream out_outroSetor) {
+		this.out_outroSetor = out_outroSetor;
+	}
+	
+	
 	public Matriz( Socket setor,
-			ObjectInputStream in, ObjectOutputStream out) {
+			ObjectInputStream in, ObjectOutputStream out, ObjectInputStream in_dest, ObjectOutputStream out_dest ) {
 
 		this.setor = setor;
 		this.in = in;
 		this.out = out;
+		this.in_outroSetor = in_dest;
+		this.out_outroSetor = out_dest;
 	}
 	
-	public Matriz( Socket setor,
-			ObjectInputStream in_orig, ObjectOutputStream out_orig, ObjectInputStream in_dest, ObjectOutputStream out_dest) {
-
-		this.setor = setor;
-		this.in = in_orig;
-		this.out = out_orig;
-		this.in_outroSetor = in_orig;
-		this.out_outroSetor = out_orig;
-	}
+	
+	
 
 	public Matriz(int porta) {
 		this.porta = porta;
@@ -66,21 +91,16 @@ public class Matriz  implements Runnable {
 					+ setor.getInetAddress().getHostAddress());
 			
 			
-			ObjectOutputStream out = new ObjectOutputStream(
-					new DataOutputStream(setor.getOutputStream()));
+			ObjectOutputStream out = new ObjectOutputStream(new DataOutputStream(setor.getOutputStream()));
 			objectoutputstream.add(out);
-			ObjectInputStream in = new ObjectInputStream(new DataInputStream(
-					setor.getInputStream()));
-			objectinputstream.add(in);
-
-		
-			
+			ObjectInputStream in = new ObjectInputStream(new DataInputStream(setor.getInputStream()));
+			objectinputstream.add(in);	
 		}
 		Matriz tc = new Matriz(setor, objectinputstream.get(0),objectoutputstream.get(0),objectinputstream.get(1),objectoutputstream.get(1) );
 		new Thread(tc).start();
-		Matriz tc2 = new Matriz(setor, objectinputstream.get(1),objectoutputstream.get(1),objectinputstream.get(0),objectoutputstream.get(0) );
+		Matriz tc2 = new Matriz(setor, objectinputstream.get(1),objectoutputstream.get(1), objectinputstream.get(0),objectoutputstream.get(0));
 		new Thread(tc2).start();
-		
+		matriz.close();
 	}
 
 	static Socket retornaOutroSocket(Socket socket) {
@@ -131,6 +151,8 @@ public class Matriz  implements Runnable {
 				Aluno aluno_cadastro = new Aluno();
 				aluno_cadastro.setMatricula(aluno.getMatricula());
 				System.out.println("Matricula:" + aluno.getMatricula());
+				aluno.setEstado(1);
+				aluno.setOperacao(1);
 				if (ExisteAlunoNoMatriz(aluno_cadastro.getMatricula()) == null) {
 					if (aluno.getSetor() == 1) {
 						aluno_cadastro.setSetor(1);
@@ -142,67 +164,49 @@ public class Matriz  implements Runnable {
 					aluno.setCodigo(id);
 					alunos.add(id, aluno_cadastro);
 					id++;
+					aluno.setEncontrou(false);
 					aluno.setInseriu(true);
 					System.out.println("Cadastro Realizado com Sucesso");
-					System.out
-							.println("-------------Todos Alunos Cadastrados --------");
+					System.out.println("-------------Todos Alunos Cadastrados --------");
 					ListarTodosAlunosMatriz();
 				} else {
 					aluno.setEncontrou(true);
-					System.out.println("Aluno Já Existe ");
 				}
-				aluno.setEstado(1);
 				out.writeObject(aluno);
 			}
 			if (aluno.getOperacao() == 2) {
 				if (setores.size() == 2) {
-					System.out.println("Operação Consulta:");
+					System.out.println("Consultando...");
 					Aluno aluno_consulta = new Aluno();
 					if (ExisteAlunoNoMatriz(aluno.getMatricula()) != null) {
-
-						aluno_consulta = ExisteAlunoNoMatriz(aluno
-								.getMatricula());
-						Socket outroSetor = null;
-						//Socket outroSetor = retornaOutroSocket(setor);
-						if(aluno.getSetor() == 1){
-						outroSetor = setores.get(1);
-						}else if(aluno.getSetor() == 2){
-							outroSetor = setores.get(0);
-						}
-						System.out
-								.println("Consultar Informações do Aluno - Endereço:"
-										+ outroSetor.getInetAddress()
-												.getHostAddress());
-						ObjectInputStream in_outroSetor = new ObjectInputStream(
-								new DataInputStream(
-										outroSetor.getInputStream()));
-						ObjectOutputStream out_outroSetor = new ObjectOutputStream(
-								new DataOutputStream(
-										outroSetor.getOutputStream()));
+						
+			  aluno_consulta = ExisteAlunoNoMatriz(aluno.getMatricula());
+		
+		  
+	   //Socket outroSetor = retornaOutroSocket(setor);				
+//    System.out.println("Consultar Informações do Aluno - Endereço:"+ outroSetor.getInetAddress().getHostAddress());
+//		if(outroSetor != null){
+		
+					
 						aluno_consulta.setEncontrou(true);
 						System.out.println("Encontrado referencia p/ valor na Matriz");
 						aluno_consulta.setEstado(2);
 						System.out.println("Enviando Solicitação...");
 						out_outroSetor.writeObject(aluno_consulta);
-						Aluno aluno_consulta_setor = (Aluno) in_outroSetor
-								.readObject();
+		
+						Aluno aluno_consulta_setor = (Aluno) in_outroSetor.readObject();
 						System.out.println("Solicitação Recebida");
-
+						//Procure objeto  com todas as informacções 
 						if (aluno_consulta_setor.isEncontrou() == true) {
 
-							// int pos = aluno_consulta.getCodigo();
-							aluno.setEstado(1);
+							aluno.setEstado(2);
 							System.out.println("Enviando Solicitação Recebida p/ Solicitante...");
 							out.writeObject(aluno_consulta_setor);
 							aluno_consulta = (Aluno) in.readObject();
 							
-
+							//Editar as informações do objeto do outro Setor 
 							if (aluno_consulta.isEdit() == true) {
-								/*
-								 * alunos.remove(pos); alunos.add(pos,
-								 * aluno_consulta);
-								 */
-								// ListarTodosAlunosMatriz();
+				
 								System.out.println("Solicitante Editando...");
 								aluno_consulta.setEstado(2);
 								out_outroSetor.writeObject(aluno_consulta);
@@ -211,27 +215,25 @@ public class Matriz  implements Runnable {
 										.readObject();
 								if (aluno_consulta_setor
 										.isRespConfirmacao() == true) {
-									System.out
-											.println("Edicao Realizada Com Sucesso!!!");
+									System.out.println("Edicao Realizada Com Sucesso!!!");
 								} else {
-									System.out
-											.println("Nenhuma Edicao Realizada!");
+									System.out.println("Nenhuma Edicao Realizada!");
 								}
 
 							} else {
-								System.out
-										.println("Nenhuma Edicao Iniciada!");
+								System.out.println("Nenhuma Edicao Iniciada!");
 							}
 						} else {
-							System.out
-									.println("Nenhum Registro Encontrado no Setor!");
+							System.out.println("Nenhum Registro Encontrado no Setor!");
 						}
-					} else {
+					
+					/*else{System.out.println("Canais Comunicação Entrada/Saida Falhou!!!");}*/ 
+					}else {
 						aluno_consulta.setEncontrou(false);
-						System.out
-								.println("Nenhum Registro Encontrado na Matriz!");
+						System.out.println("Nenhum Registro Encontrado na Matriz!");
 					}
-					aluno.setEstado(1);
+					aluno_consulta.setEstado(1);
+					aluno_consulta.setOperacao(2);
 					out.writeObject(aluno_consulta);
 				} else {
 					System.out
@@ -246,5 +248,8 @@ public class Matriz  implements Runnable {
 	}
 	
 }
+
+
+	
 	
 }
