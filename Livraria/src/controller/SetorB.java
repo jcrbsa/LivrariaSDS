@@ -22,34 +22,64 @@ public class SetorB implements Runnable{
 	private static List<Aluno> alunos = new ArrayList<Aluno>();
 	private static int id = 0;
 
-	public static Socket setor_classe;
-	private ObjectInputStream in;
-	private ObjectOutputStream out;
 
-	public SetorB(ObjectInputStream in,ObjectOutputStream out) {
+	public  ObjectInputStream in;
+	public  ObjectOutputStream out;
+	 Thread test;
 
+
+
+	public ObjectInputStream getIn() {
+		return in;
+	}
+
+	public void setIn(ObjectInputStream in) {
 		this.in = in;
+	}
+
+	public ObjectOutputStream getOut() {
+		return out;
+	}
+
+	public void setOut(ObjectOutputStream out) {
 		this.out = out;
+	}
+
+	public SetorB(ObjectInputStream entrada,ObjectOutputStream saida) {
+
+		in = entrada;
+		out = saida;
+
+	}
+	
+	public SetorB(ObjectInputStream entrada,ObjectOutputStream saida, String host, int porta) {
+
+		in = entrada;
+		out = saida;
+		this.host = host;
+		this.porta = porta;
 
 	}
 
 	public void run() {
-		
+		boolean verdade = true;
 		try {
-			while(true){
-			  Aluno teste = (Aluno) in.readObject();
+			while(verdade){
+			Aluno teste = (Aluno) in.readObject();
 
 				if(teste.getEstado() == 2){
 				
 				Aluno aluno_consulta = new Aluno();
 				aluno_consulta = ExisteAlunoNoSetorB(teste.getMatricula());
-
-				out.writeObject(aluno_consulta);
+				//teste = (Aluno) in.readObject();
+				this.getOut().writeObject(aluno_consulta);
+				
 				Aluno aluno_edicao = (Aluno) in.readObject();
+				out.writeObject(aluno_consulta);
 				if (aluno_edicao.isEdit() == true) {
 					alunos.remove(aluno_consulta.getId());
 					alunos.add(aluno_consulta.getId(), teste);
-					teste.setRespConfirmacao(true);
+					aluno_edicao.setRespConfirmacao(true);
 					out.writeObject(aluno_edicao);
 				}
 			}else if(teste.getEstado() == 1){
@@ -71,19 +101,24 @@ public class SetorB implements Runnable{
 						System.out
 								.println("Nenhum Registro Encontrado no Sistema");
 					} else {
-						System.out.println("|Nome:" + teste.getNome()
+						System.out.println("Encontrado no outro Setor:");
+						char setor = teste.getSetor() == 1 ? 'A':'B';
+						System.out.println("|Id||Nome|Matricula|Setor|");
+						System.out.println("|"+teste.getId() + "||" + teste.getNome()
 								+ "||" + teste.getMatricula() + "||"
-								+ teste.getSetor());
-						op = getInt("Alterar Informações registro 1=Sim,0-Não",
+								+ setor + "|");
+						op = getInt("Alterar Informações registro 1=Sim,2-Não",
 								1, 2);
 						if (op == 1) {
-							Aluno aluno_alteracao = new Aluno();
 							nome = getString("Digite Nome:");
 							matricula = getString("Digite Matricula:");
-							aluno_alteracao.setNome(nome);
-							aluno_alteracao.setMatricula(matricula);
-							aluno_alteracao.setEdit(true);
-							out.writeObject(aluno_alteracao);
+							teste.setNome(nome);
+							teste.setEstado(2);
+							teste.setConsulta(3);
+							teste.setMatricula(matricula);
+							teste.setEdit(true);
+							this.getOut().writeObject(teste);
+							verdade = false;
 						}
 					}
 					
@@ -97,17 +132,22 @@ public class SetorB implements Runnable{
 
 	}
 
-	public static void main(String[] args) throws IOException {
-
-		new SetorB("10.0.0.2", 12345).executa();
-	}
 
 	public SetorB(String host, int porta) {
 		this.host = host;
 		this.porta = porta;
 	}
+	
+	
+	public static void main(String[] args) throws IOException {
 
-	public void executa() throws IOException {
+		new SetorB("10.0.0.2", 12345).executa();
+		
+		
+	}
+
+
+	public  void executa() throws IOException {
 	
 			Socket setor = new Socket(this.host, this.porta);
 
@@ -119,20 +159,19 @@ public class SetorB implements Runnable{
 			
 			ObjectInputStream in = new ObjectInputStream(new DataInputStream(
 					setor.getInputStream()));
-			setor_classe =  setor;
 			
 		SetorB tc = new SetorB(in, out);
-		new Thread(tc).start();
-
-			String sair;
-			String nome;
+		test = new Thread(tc);
+		test.start();
+		
+			String nome = null;
 			String matricula = null;
 			Aluno aluno = new Aluno();
 	
 			int op;
 			System.out.println("Bem Vindo Livraria");
-			sair = getString("\"cont\" p/ continuar (\"fim\" para encerrar)");
-			while (!sair.equals("fim")) {
+			//sair = getString("\"cont\" p/ continuar (\"fim\" para encerrar)");
+			while (true) {
 				op = getInt("1=Cadastrar,2=Consulta,3=Listar Todos Usuários,",
 						1, 3);
 				if (op == 1 || op == 2) {
@@ -165,7 +204,15 @@ public class SetorB implements Runnable{
 						aluno_consulta.setMatricula(matricula);
 						aluno_consulta.setOperacao(2);
 						aluno_consulta.setSetor(2);
+						aluno_consulta.setConsulta(1);
 						out.writeObject(aluno_consulta);
+						try {
+							test.join( 30000 );
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						
 					}
 					
 
@@ -182,13 +229,12 @@ public class SetorB implements Runnable{
 					break;
 				}
 
-				sair = getString("Continuar' p/ prosseguir ou(\"fim\" para encerrar)");
+				//sair = getString("Continuar' p/ prosseguir ou(\"fim\" para encerrar)");
 			}
 		
 	
-			System.out.println("Programa encerrado");
-			
-			setor.close();
+//			System.out.println("Programa encerrado");
+//			setor.close();
 
 	}
 

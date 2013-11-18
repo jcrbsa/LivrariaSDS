@@ -21,10 +21,20 @@ public class Aluno implements Serializable{
 	private boolean consultaSetor;
 	private boolean edit;
 	private int id;
-	private int estado; //0 - nao definido;1 - get; 2 - set; 
+	private int estado; //0 - nao definido;1 - get; 2 - set;
+	private int consulta; //1 - inicial 2- retorno consulta no outro setor/3 editar registor consulta inicial/4 retorno p/ edicao para outro setor
 	
 	
 
+
+
+	public int getConsulta() {
+		return consulta;
+	}
+
+	public void setConsulta(int consulta) {
+		this.consulta = consulta;
+	}
 
 
 	public int getEstado() {
@@ -46,6 +56,7 @@ public class Aluno implements Serializable{
 		consultaSetor = false;
 		edit = false;
 		estado= 0;
+		consulta = 0;
 	}
 	
 	public int getId() {
