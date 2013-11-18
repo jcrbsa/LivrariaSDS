@@ -18,8 +18,8 @@ public class SetorA implements Runnable {
 
 	static Reader r = new InputStreamReader(System.in);
 	static StreamTokenizer st = new StreamTokenizer(r);
-	private int porta = 12345;
-	private String host = "127.0.0.1";
+	private int porta;
+	private String host;
 	private static List<Aluno> alunos = new ArrayList<Aluno>();
 	private static int id = 0;
 
@@ -62,27 +62,26 @@ public class SetorA implements Runnable {
 	}
 
 	public void run() {
-
 		try {
 			while (true) {
-				Aluno teste = (Aluno) in.readObject();
-
+				 Aluno teste = (Aluno) in.readObject();
 				if (teste.getEstado() == 2) {
 					if (teste.getConsulta() == 1) {
 
 						teste = ExisteAlunoNoSetorA(teste.getMatricula());
 						teste.setOperacao(2);
 						teste.setConsulta(2);
-						this.getOut().writeObject(teste);
+						this.out.writeObject(teste);
+						
+					} else if(teste.getConsulta() == 3) {
 
-					} else if (teste.getConsulta() == 2) {
-						if (teste.isEdit() == true) {
+						if (teste.isEdit() == true) 
+						{
 							alunos.remove(teste.getId());
 							alunos.add(teste.getId(), teste);
 							teste.setRespConfirmacao(true);
 							teste.setConsulta(4);
-							this.getOut().writeObject(teste);
-
+							this.out.writeObject(teste);
 						}
 					}
 

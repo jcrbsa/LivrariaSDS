@@ -30,11 +30,20 @@ public class Matriz implements Runnable {
 	private static int id = 0;
 
 	private ServerSocket matriz;
-	private ObjectInputStream in;
-	private ObjectOutputStream out;
+	public ObjectInputStream in;
+	public ObjectOutputStream out;
 	private static ObjectInputStream in_outroSetor;
-	private static ObjectOutputStream out_outroSetor;
+	public ObjectOutputStream out_outroSetor;
+	private ObjectOutputStream test;
 	private static SetorA setorA;
+	public ObjectOutputStream getOut_outroSetor() {
+		return out_outroSetor;
+	}
+
+	public  void setOut_outroSetor(ObjectOutputStream out_outroSetor) {
+		this.out_outroSetor = out_outroSetor;
+	}
+
 	private static SetorB setorB;
 	private Socket dest;
 
@@ -90,6 +99,137 @@ public class Matriz implements Runnable {
 		matriz.close();
 	}
 
+	public void run() {
+		try {
+
+			while (true) {
+				Aluno aluno = (Aluno) in.readObject();
+
+				if (aluno.getOperacao() == 1) {
+
+					Aluno aluno_cadastro = new Aluno();
+					aluno_cadastro.setMatricula(aluno.getMatricula());
+					System.out.println("Matricula:" + aluno.getMatricula());
+					aluno.setEstado(1);
+					aluno.setOperacao(1);
+					if (ExisteAlunoNoMatriz(aluno_cadastro.getMatricula()) == null) {
+						if (aluno.getSetor() == 1) {
+							aluno_cadastro.setSetor(1);
+						}
+						if (aluno.getSetor() == 2) {
+							aluno_cadastro.setSetor(2);
+						}
+						System.out.println("Cadastrando... ");
+						aluno.setCodigo(id);
+						alunos.add(id, aluno_cadastro);
+						id++;
+						aluno.setEncontrou(false);
+						aluno.setInseriu(true);
+						System.out.println("Cadastro Realizado com Sucesso");
+						System.out
+								.println("-------------Todos Alunos Cadastrados --------");
+						ListarTodosAlunosMatriz();
+					} else {
+						aluno.setEncontrou(true);
+					}
+					out.writeObject(aluno);
+				} else if (aluno.getOperacao() == 2) {
+					if (setores.size() == 2) {
+						System.out.println("Consultando...");
+						if (ExisteAlunoNoMatriz(aluno.getMatricula()) != null) {
+		
+							if( aluno.getConsulta() == 1 ){							
+								if (aluno.getSetor() == 1) {
+									out_outroSetor = setorA.getOut();
+								} else if (aluno.getSetor() == 2) {
+									out_outroSetor = setorB.getOut();
+								}
+								test = defineCanalOutput(aluno.getSetor());					
+							}
+							if (aluno.getConsulta() == 1) {
+					
+								
+								aluno = ExisteAlunoNoMatriz(aluno
+										.getMatricula());
+
+								aluno.setEncontrou(true);
+
+								System.out
+										.println("Encontrado referencia p/ valor na Matriz");
+								aluno.setEstado(2);
+								aluno.setConsulta(1);
+								System.out.println("Enviando Solicitação...");
+								System.out.println("Aguardando Resposta...");
+						
+								
+								test.writeObject(aluno);
+								//Recebey de A, Se A vai p B
+							} else if (aluno.getConsulta() == 2) {
+
+								if (aluno.getSetor() == 2) {
+									in_outroSetor = setorA.getIn();
+									out_outroSetor = setorA.getOut();
+								} else if (aluno.getSetor() == 1) {
+									in_outroSetor = setorB.getIn();
+									out_outroSetor = setorB.getOut();
+								}
+
+								in_outroSetor = defineCanalInput(aluno
+										.getSetor());
+								out_outroSetor = defineCanalOutput(aluno
+										.getSetor());
+					
+								aluno.setEstado(1);
+								aluno.setOperacao(2);
+								aluno.setEncontrou(true);
+								System.out.println("Enviando Solicitação Recebida p/ Solicitante...");
+								out_outroSetor.writeObject(aluno);
+								//Setor B enviou
+							} else if (aluno.getConsulta() == 3) {
+
+								if (aluno.isEdit() == true) {
+									System.out
+											.println("Solicitante Editou...");
+									System.out.println(aluno.getNome());
+									//aluno.setEstado(3);
+									aluno.setConsulta(3);
+									test.writeObject(aluno);
+									System.out.println("Enviando Edicao p/ atualizacao...");
+								}
+								} else if (aluno.getConsulta() == 4) {
+
+									if (aluno.isRespConfirmacao() == true) {
+										System.out
+												.println("Edicao Realizada Com Sucesso!!!");
+									} else {
+										System.out
+												.println("Nenhuma Edicao Realizada!");
+									}
+								}
+						} else {
+							aluno.setEncontrou(false);
+							System.out
+									.println("Nenhum Registro Encontrado na Matriz!");
+						}
+					} else {
+						System.out
+								.println("Nem todos os Setores estão Conectados!");
+					}
+				}
+
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.out.println(e.getMessage());
+		} catch (ClassNotFoundException cnfe) {
+			cnfe.printStackTrace();
+			System.out.println(cnfe.getMessage());
+		}
+
+	}
+	
+	
 	Socket retornaOutroSocket(Socket socket) {
 
 		for (Socket setor : setores) {
@@ -147,151 +287,6 @@ public class Matriz implements Runnable {
 
 	}
 
-	public void run() {
-		try {
-
-			while (true) {
-				Aluno aluno = (Aluno) in.readObject();
-
-				if (aluno.getOperacao() == 1) {
-
-					Aluno aluno_cadastro = new Aluno();
-					aluno_cadastro.setMatricula(aluno.getMatricula());
-					System.out.println("Matricula:" + aluno.getMatricula());
-					aluno.setEstado(1);
-					aluno.setOperacao(1);
-					if (ExisteAlunoNoMatriz(aluno_cadastro.getMatricula()) == null) {
-						if (aluno.getSetor() == 1) {
-							aluno_cadastro.setSetor(1);
-						}
-						if (aluno.getSetor() == 2) {
-							aluno_cadastro.setSetor(2);
-						}
-						System.out.println("Cadastrando... ");
-						aluno.setCodigo(id);
-						alunos.add(id, aluno_cadastro);
-						id++;
-						aluno.setEncontrou(false);
-						aluno.setInseriu(true);
-						System.out.println("Cadastro Realizado com Sucesso");
-						System.out
-								.println("-------------Todos Alunos Cadastrados --------");
-						ListarTodosAlunosMatriz();
-					} else {
-						aluno.setEncontrou(true);
-					}
-					out.writeObject(aluno);
-				} else if (aluno.getOperacao() == 2) {
-					if (setores.size() == 2) {
-						System.out.println("Consultando...");
-						if (ExisteAlunoNoMatriz(aluno.getMatricula()) != null) {
-						
-							if (aluno.getConsulta() == 1) {
-								if (aluno.getSetor() == 1) {
-									in_outroSetor = setorA.getIn();
-									out_outroSetor = setorA.getOut();
-								} else if (aluno.getSetor() == 2) {
-									in_outroSetor = setorB.getIn();
-									out_outroSetor = setorB.getOut();
-								}
-
-								in_outroSetor = defineCanalInput(aluno.getSetor());
-								out_outroSetor = defineCanalOutput(aluno.getSetor());
-
-								
-								aluno = ExisteAlunoNoMatriz(aluno
-										.getMatricula());
-
-								aluno.setEncontrou(true);
-
-								System.out
-										.println("Encontrado referencia p/ valor na Matriz");
-								aluno.setEstado(2);
-								aluno.setConsulta(1);
-								System.out.println("Enviando Solicitação...");
-								System.out.println("Aguardando Resposta...");
-
-								out_outroSetor.writeObject(aluno);
-								//Recebey de A, Se A vai p B
-							} else if (aluno.getConsulta() == 2) {
-
-								if (aluno.getSetor() == 2) {
-									in_outroSetor = setorA.getIn();
-									out_outroSetor = setorA.getOut();
-								} else if (aluno.getSetor() == 1) {
-									in_outroSetor = setorB.getIn();
-									out_outroSetor = setorB.getOut();
-								}
-
-								in_outroSetor = defineCanalInput(aluno
-										.getSetor());
-								out_outroSetor = defineCanalOutput(aluno
-										.getSetor());
-					
-								aluno.setEstado(1);
-								aluno.setOperacao(2);
-								aluno.setEncontrou(true);
-								System.out
-										.println("Enviando Solicitação Recebida p/ Solicitante...");
-								out_outroSetor.writeObject(aluno);
-								//Setor B enviou
-							} else if (aluno.getConsulta() == 3) {
-
-								if (aluno.getSetor() == 1) {
-									in_outroSetor = setorA.getIn();
-									out_outroSetor = setorA.getOut();
-								} else if (aluno.getSetor() == 2) {
-									in_outroSetor = setorB.getIn();
-									out_outroSetor = setorB.getOut();
-								}
-
-								in_outroSetor = defineCanalInput(aluno
-										.getSetor());
-								out_outroSetor = defineCanalOutput(aluno
-										.getSetor());
-
-								if (aluno.isEdit() == true) {
-									System.out
-											.println("Solicitante Editou...");
-									aluno.setEstado(2);
-									aluno.setConsulta(3);
-									out_outroSetor.writeObject(aluno);
-									System.out.println("Enviando Edicao p/ atualizacao...");
-								}
-								} else if (aluno.getConsulta() == 4) {
-
-									if (aluno.isRespConfirmacao() == true) {
-										System.out
-												.println("Edicao Realizada Com Sucesso!!!");
-									} else {
-										System.out
-												.println("Nenhuma Edicao Realizada!");
-									}
-								}
-						} else {
-							aluno.setEncontrou(false);
-							System.out
-									.println("Nenhum Registro Encontrado na Matriz!");
-						}
-						// aluno.setEstado(1);
-						// aluno.setOperacao(2);
-						// out.writeObject(aluno);
-					} else {
-						System.out
-								.println("Nem todos os Setores estão Conectados!");
-					}
-				}
-
-			}
-
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.out.println(e.getMessage());
-		} catch (ClassNotFoundException cnfe) {
-			cnfe.printStackTrace();
-			System.out.println(cnfe.getMessage());
-		}
-
-	}
+	
 
 }

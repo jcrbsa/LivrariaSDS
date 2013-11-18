@@ -118,7 +118,7 @@ public class SetorB implements Runnable{
 							teste.setMatricula(matricula);
 							teste.setEdit(true);
 							this.getOut().writeObject(teste);
-							verdade = false;
+							System.out.println("Aguarde enquanto é finalizado");//verdade = false;
 						}
 					}
 					
@@ -141,7 +141,7 @@ public class SetorB implements Runnable{
 	
 	public static void main(String[] args) throws IOException {
 
-		new SetorB("10.0.0.2", 12345).executa();
+		new SetorB("127.0.0.1", 12345).executa();
 		
 		
 	}
@@ -167,7 +167,7 @@ public class SetorB implements Runnable{
 			String nome = null;
 			String matricula = null;
 			Aluno aluno = new Aluno();
-	
+			boolean entrada = false;
 			int op;
 			System.out.println("Bem Vindo Livraria");
 			//sair = getString("\"cont\" p/ continuar (\"fim\" para encerrar)");
@@ -212,6 +212,7 @@ public class SetorB implements Runnable{
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
+				
 						
 					}
 					
@@ -230,8 +231,13 @@ public class SetorB implements Runnable{
 				}
 
 				//sair = getString("Continuar' p/ prosseguir ou(\"fim\" para encerrar)");
+//				if(entrada == true){
+//					
+//					test = new Thread(tc);
+//					test.start();
+//					entrada = false;
+//				}
 			}
-		
 	
 //			System.out.println("Programa encerrado");
 //			setor.close();

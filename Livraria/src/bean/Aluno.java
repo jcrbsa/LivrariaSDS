@@ -56,7 +56,7 @@ public class Aluno implements Serializable{
 		consultaSetor = false;
 		edit = false;
 		estado= 0;
-		consulta = 0;
+		consulta = 3;
 	}
 	
 	public int getId() {
